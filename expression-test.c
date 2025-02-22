@@ -1,0 +1,173 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+#include <math.h>
+
+#define MAX_EXPR_SIZE 100
+
+// Stack for operators and operands
+typedef struct
+{
+    double data[MAX_EXPR_SIZE];
+    int top;
+} Stack;
+
+void initStack(Stack *s)
+{
+    s->top = -1;
+}
+
+void push(Stack *s, double value)
+{
+    if (s->top < MAX_EXPR_SIZE - 1)
+    {
+        s->data[++(s->top)] = value;
+    }
+    else
+    {
+        printf("Stack overflow!\n");
+        exit(1);
+    }
+}
+
+double pop(Stack *s)
+{
+    if (s->top >= 0)
+    {
+        return s->data[(s->top)--];
+    }
+    else
+    {
+        printf("Stack underflow!\n");
+        exit(1);
+    }
+}
+
+int precedence(char op)
+{
+    switch (op)
+    {
+    case '+':
+    case '-':
+        return 1;
+    case '*':
+    case '/':
+        return 2;
+    case '^':
+        return 3;
+    default:
+        return 0;
+    }
+}
+
+double applyOp(double a, double b, char op)
+{
+    switch (op)
+    {
+    case '+':
+        return a + b;
+    case '-':
+        return a - b;
+    case '*':
+        return a * b;
+    case '/':
+        return a / b;
+    case '^':
+        return pow(a, b);
+    default:
+        return 0;
+    }
+}
+
+double evaluate(char *expr, double vars[256])
+{
+    Stack values, ops;
+    initStack(&values);
+    initStack(&ops);
+
+    for (int i = 0; expr[i]; i++)
+    {
+        if (isspace(expr[i]))
+            continue;
+
+        if (isalpha(expr[i]))
+        {
+            // Handle variables
+            push(&values, vars[(int)expr[i]]);
+        }
+        else if (isdigit(expr[i]))
+        {
+            // Handle numbers
+            double val = 0;
+            while (expr[i] && isdigit(expr[i]))
+            {
+                val = (val * 10) + (expr[i] - '0');
+                i++;
+            }
+            i--;
+            push(&values, val);
+        }
+        else if (expr[i] == '(')
+        {
+            push(&ops, expr[i]);
+        }
+        else if (expr[i] == ')')
+        {
+            while (ops.top != -1 && ops.data[ops.top] != '(')
+            {
+                double val2 = pop(&values);
+                double val1 = pop(&values);
+                char op = (char)pop(&ops);
+                push(&values, applyOp(val1, val2, op));
+            }
+            pop(&ops); // Remove '('
+        }
+        else
+        {
+            // Handle operators
+            while (ops.top != -1 && precedence(ops.data[ops.top]) >= precedence(expr[i]))
+            {
+                double val2 = pop(&values);
+                double val1 = pop(&values);
+                char op = (char)pop(&ops);
+                push(&values, applyOp(val1, val2, op));
+            }
+            push(&ops, expr[i]);
+        }
+    }
+
+    // Evaluate remaining operations
+    while (ops.top != -1)
+    {
+        double val2 = pop(&values);
+        double val1 = pop(&values);
+        char op = (char)pop(&ops);
+        push(&values, applyOp(val1, val2, op));
+    }
+
+    return pop(&values);
+}
+
+int main()
+{
+    char expr[MAX_EXPR_SIZE];
+
+    do
+    {
+        double vars[256] = {0}; // ASCII-based variable storage
+
+        printf("Enter an expression: ");
+        fgets(expr, MAX_EXPR_SIZE, stdin);
+        if (expr[0] == '\n')
+        {
+            return 0;
+        }
+        vars['x'] = 5;
+        vars['y'] = 3;
+        printf("Variables: x = %lf, y = %lf\n", vars['x'], vars['y']);
+
+        double result = evaluate(expr, vars);
+        printf("Result: %lf\n", result);
+    } while (1);
+}
