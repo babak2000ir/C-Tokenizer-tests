@@ -80,6 +80,25 @@ double applyOp(double a, double b, char op)
     }
 }
 
+double defaultOpValue(char op)
+{
+    switch (op)
+    {
+    case '+':
+        return 0;
+    case '-':
+        return 0;
+    case '*':
+        return 1;
+    case '/':
+        return 1;
+    case '^':
+        return 1;
+    default:
+        return 0;
+    }
+}
+
 double evaluate(char *expr, double vars[256])
 {
     Stack values, ops;
@@ -129,8 +148,16 @@ double evaluate(char *expr, double vars[256])
             while (ops.top != -1 && precedence(ops.data[ops.top]) >= precedence(expr[i]))
             {
                 double val2 = pop(&values);
-                double val1 = pop(&values);
                 char op = (char)pop(&ops);
+                double val1;
+                if (values.top != -1)
+                {
+                    val1 = pop(&values);
+                }
+                else
+                {
+                    val1 = defaultOpValue(op);
+                }
                 push(&values, applyOp(val1, val2, op));
             }
             push(&ops, expr[i]);
@@ -141,8 +168,16 @@ double evaluate(char *expr, double vars[256])
     while (ops.top != -1)
     {
         double val2 = pop(&values);
-        double val1 = pop(&values);
         char op = (char)pop(&ops);
+        double val1;
+        if (values.top != -1)
+        {
+            val1 = pop(&values);
+        }
+        else
+        {
+            val1 = defaultOpValue(op);
+        }
         push(&values, applyOp(val1, val2, op));
     }
 
@@ -163,8 +198,8 @@ int main()
         {
             return 0;
         }
-        vars['x'] = 5;
-        vars['y'] = 3;
+        vars['x'] = 1;
+        vars['y'] = 2;
         printf("Variables: x = %lf, y = %lf\n", vars['x'], vars['y']);
 
         double result = evaluate(expr, vars);
