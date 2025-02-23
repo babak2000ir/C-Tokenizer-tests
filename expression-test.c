@@ -186,23 +186,63 @@ double evaluate(char *expr, double vars[256])
 
 int main()
 {
-    char expr[MAX_EXPR_SIZE];
+    double vars[256] = {0}; // ASCII-based variable storage
 
-    do
+    vars['x'] = 0;
+    vars['y'] = 1;
+    vars['z'] = 2;
+
+    printf("Variables: x = %lf, y = %lf\n", vars['x'], vars['y']);
+
+    char *expr[] = {
+        "x + y",               // 0 + 1 = 1
+        "x - y - z",           // 0 - 1 - 2 = -3
+        "(x + y) * z",         // (0 + 1) * 2 = 2
+        "y + (z * x)",         // 1 + (2 * 0) = 1
+        "-y + z",              // -1 + 2 = 1
+        "-(y + z)",            // -(1 + 2) = -3
+        "x / y + z",           // 0 / 1 + 2 = 2 (assuming division by zero is handled)
+        "z / (y - x)",         // 2 / (1 - 0) = 2
+        "(z + y) * (x - y)",   // (2 + 1) * (0 - 1) = -3
+        "x * y * z",           // 0 * 1 * 2 = 0
+        "y - (z + x)",         // 1 - (2 + 0) = -1
+        "-(x + y + z)",        // -(0 + 1 + 2) = -3
+        "x + (y * z) - y",     // 0 + (1 * 2) - 1 = 1
+        "(x + z) / y",         // (0 + 2) / 1 = 2
+        "z - y - x",           // 2 - 1 - 0 = 1
+        "x + y * z",           // 0 + 1 * 2 = 2
+        "(x + y) * (z - y)",   // (0 + 1) * (2 - 1) = 1
+        "-(x - y) + z",        // -(0 - 1) + 2 = 3
+        "x + y + z",           // 0 + 1 + 2 = 3
+        "x - (y + z)"          // 0 - (1 + 2) = -3
+    };
+    
+    double results[] = {
+        1,    // x + y
+        -3,   // x - y - z
+        2,    // (x + y) * z
+        1,    // y + (z * x)
+        1,    // -y + z
+        -3,   // -(y + z)
+        2,    // x / y + z
+        2,    // z / (y - x)
+        -3,   // (z + y) * (x - y)
+        0,    // x * y * z
+        -1,   // y - (z + x)
+        -3,   // -(x + y + z)
+        1,    // x + (y * z) - y
+        2,    // (x + z) / y
+        1,    // z - y - x
+        2,    // x + y * z
+        1,    // (x + y) * (z - y)
+        3,    // -(x - y) + z
+        3,    // x + y + z
+        -3    // x - (y + z)
+    };
+
+    for (int i = 0; i < sizeof(expr) / sizeof(expr[0]); i++)
     {
-        double vars[256] = {0}; // ASCII-based variable storage
-
-        printf("Enter an expression: ");
-        fgets(expr, MAX_EXPR_SIZE, stdin);
-        if (expr[0] == '\n')
-        {
-            return 0;
-        }
-        vars['x'] = 1;
-        vars['y'] = 2;
-        printf("Variables: x = %lf, y = %lf\n", vars['x'], vars['y']);
-
-        double result = evaluate(expr, vars);
-        printf("Result: %lf\n", result);
-    } while (1);
+        double result = evaluate(expr[i], vars);
+        printf("Calculating %s Result: %lf (expected %lf)\n", expr[i], result, results[i]);
+    }
 }
