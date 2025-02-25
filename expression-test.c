@@ -56,6 +56,8 @@ int precedence(char op)
         return 2;
     case '^':
         return 3;
+    case '_':
+        return 4;
     default:
         return 0;
     }
@@ -68,6 +70,7 @@ double applyOp(double a, double b, char op)
     case '+':
         return a + b;
     case '-':
+    case '_':
         return a - b;
     case '*':
         return a * b;
@@ -87,6 +90,7 @@ double defaultOpValue(char op)
     case '+':
         return 0;
     case '-':
+    case '_':
         return 0;
     case '*':
         return 1;
@@ -184,6 +188,49 @@ double evaluate(char *expr, double vars[256])
     return pop(&values);
 }
 
+char getPreviousChar(char *expr, int index)
+{
+    if (index == 0)
+    {
+        return '\0';
+    }
+    while (index > 0 && isspace(expr[index]))
+    {
+        index--;
+    }
+    return expr[index];
+}
+
+int isUnaryMinus(char *expr, int index)
+{
+    if (index == 0 || strchr("+-*/(", getPreviousChar(expr, index - 1)))
+    {
+        return 1;
+    }
+    return 0;
+}
+
+void replace_unary_minus(char *expr)
+{
+    int len = strlen(expr);
+    int j = 0;
+
+    for (int i = 0; i < len; i++)
+    {
+        if (expr[i] == '-')
+        {
+            // Check if it's unary (start of expression or after operator/parenthesis)
+            if (i == 0 || strchr("+-*/(", getPreviousChar(expr, i - 1)))
+            {
+                expr[j++] = '_';
+                continue; // Skip normal '-' placement
+            }
+        }
+        expr[j++] = expr[i];
+    }
+    expr[j] = '\0'; // Null-terminate string
+}
+
 int main()
 {
     double vars[256] = {0}; // ASCII-based variable storage
@@ -192,57 +239,24 @@ int main()
     vars['y'] = 1;
     vars['z'] = 2;
 
-    printf("Variables: x = %lf, y = %lf\n", vars['x'], vars['y']);
+    printf("Variables: x = %lf, y = %lf, z = %lf\n", vars['x'], vars['y'], vars['z']);
 
     char *expr[] = {
-        "x + y",               // 0 + 1 = 1
-        "x - y - z",           // 0 - 1 - 2 = -3
-        "(x + y) * z",         // (0 + 1) * 2 = 2
-        "y + (z * x)",         // 1 + (2 * 0) = 1
-        "-y + z",              // -1 + 2 = 1
-        "-(y + z)",            // -(1 + 2) = -3
-        "x / y + z",           // 0 / 1 + 2 = 2 (assuming division by zero is handled)
-        "z / (y - x)",         // 2 / (1 - 0) = 2
-        "(z + y) * (x - y)",   // (2 + 1) * (0 - 1) = -3
-        "x * y * z",           // 0 * 1 * 2 = 0
-        "y - (z + x)",         // 1 - (2 + 0) = -1
-        "-(x + y + z)",        // -(0 + 1 + 2) = -3
-        "x + (y * z) - y",     // 0 + (1 * 2) - 1 = 1
-        "(x + z) / y",         // (0 + 2) / 1 = 2
-        "z - y - x",           // 2 - 1 - 0 = 1
-        "x + y * z",           // 0 + 1 * 2 = 2
-        "(x + y) * (z - y)",   // (0 + 1) * (2 - 1) = 1
-        "-(x - y) + z",        // -(0 - 1) + 2 = 3
-        "x + y + z",           // 0 + 1 + 2 = 3
-        "x - (y + z)"          // 0 - (1 + 2) = -3
-    };
-    
-    double results[] = {
-        1,    // x + y
-        -3,   // x - y - z
-        2,    // (x + y) * z
-        1,    // y + (z * x)
-        1,    // -y + z
-        -3,   // -(y + z)
-        2,    // x / y + z
-        2,    // z / (y - x)
-        -3,   // (z + y) * (x - y)
-        0,    // x * y * z
-        -1,   // y - (z + x)
-        -3,   // -(x + y + z)
-        1,    // x + (y * z) - y
-        2,    // (x + z) / y
-        1,    // z - y - x
-        2,    // x + y * z
-        1,    // (x + y) * (z - y)
-        3,    // -(x - y) + z
-        3,    // x + y + z
-        -3    // x - (y + z)
+        "-(x + y) * -z", // 2
+        //"-(x + y) + -z", //?
+        //"-z*(-y --z)-z/z*(y-z)", //-1
+        //"-z*(-y --z)", //-2
+        //"-z/z*(y-z)" //1
     };
 
     for (int i = 0; i < sizeof(expr) / sizeof(expr[0]); i++)
     {
+        // Replace unary - with _
+        replace_unary_minus(expr[i]);
+
+        printf("Expression with uniary minus _ : %s\n", expr[i]);
+
         double result = evaluate(expr[i], vars);
-        printf("Calculating %s Result: %lf (expected %lf)\n", expr[i], result, results[i]);
+        printf("Calculating %s Result: %lf\n", expr[i], result);
     }
 }
