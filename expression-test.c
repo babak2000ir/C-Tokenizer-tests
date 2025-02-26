@@ -103,6 +103,22 @@ double defaultOpValue(char op)
     }
 }
 
+void calculate(Stack *values, Stack *ops)
+{
+    double val1 = pop(values);
+    char op = (char)pop(ops);
+    double val2;
+    if (values->top != -1)
+    {
+        val2 = pop(values);
+    }
+    else
+    {
+        val2 = defaultOpValue(op);
+    }
+    push(values, applyOp(val1, val2, op));
+}
+
 double evaluate(char *expr, double vars[256])
 {
     Stack values, ops;
@@ -139,10 +155,7 @@ double evaluate(char *expr, double vars[256])
         {
             while (ops.top != -1 && ops.data[ops.top] != '(')
             {
-                double val2 = pop(&values);
-                double val1 = pop(&values);
-                char op = (char)pop(&ops);
-                push(&values, applyOp(val1, val2, op));
+                calculate(&values, &ops);
             }
             pop(&ops); // Remove '('
         }
@@ -151,18 +164,7 @@ double evaluate(char *expr, double vars[256])
             // Handle operators
             while (ops.top != -1 && precedence(ops.data[ops.top]) >= precedence(expr[i]))
             {
-                double val2 = pop(&values);
-                char op = (char)pop(&ops);
-                double val1;
-                if (values.top != -1)
-                {
-                    val1 = pop(&values);
-                }
-                else
-                {
-                    val1 = defaultOpValue(op);
-                }
-                push(&values, applyOp(val1, val2, op));
+                calculate(&values, &ops);
             }
             push(&ops, expr[i]);
         }
@@ -171,18 +173,7 @@ double evaluate(char *expr, double vars[256])
     // Evaluate remaining operations
     while (ops.top != -1)
     {
-        double val2 = pop(&values);
-        char op = (char)pop(&ops);
-        double val1;
-        if (values.top != -1)
-        {
-            val1 = pop(&values);
-        }
-        else
-        {
-            val1 = defaultOpValue(op);
-        }
-        push(&values, applyOp(val1, val2, op));
+        calculate(&values, &ops);
     }
 
     return pop(&values);
