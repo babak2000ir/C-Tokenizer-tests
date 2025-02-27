@@ -234,10 +234,10 @@ int main()
 
     char *expr[] = {
         "-(x + y) * -z", // 2
-        //"-(x + y) + -z", //?
-        //"-z*(-y --z)-z/z*(y-z)", //-1
-        //"-z*(-y --z)", //-2
-        //"-z/z*(y-z)" //1
+        "-(x + y) + -z", //-3
+        "-z*(-y --z)-z/z*(y-z)", //-1
+        "-z*(-y --z)", //-2
+        "-z/z*(y-z)" //1
     };
 
     for (int i = 0; i < sizeof(expr) / sizeof(expr[0]); i++)
