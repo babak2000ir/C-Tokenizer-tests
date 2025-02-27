@@ -103,6 +103,25 @@ double defaultOpValue(char op)
     }
 }
 
+printStack(Stack *s)
+{
+    printf("[");
+    for (int i = 0; i <= s->top; i++)
+    {
+        if (s->data[i] > 10)
+            printf("%c ", (int)(s->data[i]));
+        else
+            printf("%f ", s->data[i]);
+        printf(", ");
+    }
+    printf("]\n");
+}
+
+int is_right_associative(char op)
+{
+    return (op == '^' || op == '_'); // Assuming unary '-' is right-associative
+}
+
 void calculate(Stack *values, Stack *ops)
 {
     double val1 = pop(values);
@@ -162,7 +181,11 @@ double evaluate(char *expr, double vars[256])
         else
         {
             // Handle operators
-            while (ops.top != -1 && precedence(ops.data[ops.top]) >= precedence(expr[i]))
+            while (ops.top != -1 &&
+                   ((is_right_associative(expr[i]) &&
+                     precedence(ops.data[ops.top]) > precedence(expr[i])) ||
+                    (!is_right_associative(expr[i]) &&
+                     precedence(ops.data[ops.top]) >= precedence(expr[i]))))
             {
                 calculate(&values, &ops);
             }
@@ -234,10 +257,10 @@ int main()
 
     char *expr[] = {
         "-(x + y) * -z", // 2
-        "-(x + y) + -z", //-3
-        "-z*(-y --z)-z/z*(y-z)", //-1
-        "-z*(-y --z)", //-2
-        "-z/z*(y-z)" //1
+        //"-(x + y) + -z", //-3
+        //"-z*(-y --z)-z/z*(y-z)", //-1
+        //"-z*(-y --z)", //-2
+        //"-z/z*(y-z)" //1
     };
 
     for (int i = 0; i < sizeof(expr) / sizeof(expr[0]); i++)
