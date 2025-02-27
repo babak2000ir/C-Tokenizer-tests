@@ -105,21 +105,23 @@ double defaultOpValue(char op)
 
 printStack(Stack *s)
 {
-    printf("[");
+    printf("[ ");
     for (int i = 0; i <= s->top; i++)
     {
         if (s->data[i] > 10)
-            printf("%c ", (int)(s->data[i]));
+            printf("%c", (int)(s->data[i]));
         else
-            printf("%f ", s->data[i]);
-        printf(", ");
+            printf("%i", (int)s->data[i]);
+
+        if (i < s->top)
+            printf(" ");
     }
-    printf("]\n");
+    printf(" ]\n");
 }
 
 int is_right_associative(char op)
 {
-    return (op == '^' || op == '_'); // Assuming unary '-' is right-associative
+    return (op == '^' || op == '_');
 }
 
 void calculate(Stack *values, Stack *ops)
@@ -127,7 +129,7 @@ void calculate(Stack *values, Stack *ops)
     double val1 = pop(values);
     char op = (char)pop(ops);
     double val2;
-    if (values->top != -1)
+    if (values->top != -1 && op != '_')
     {
         val2 = pop(values);
     }
@@ -135,7 +137,12 @@ void calculate(Stack *values, Stack *ops)
     {
         val2 = defaultOpValue(op);
     }
-    push(values, applyOp(val1, val2, op));
+    push(values, applyOp(val2, val1, op));
+    printf("%i %c %i = %li", (int)val2, op, (int)val1, (int)applyOp(val2, val1, op));
+    printf("\t\t\t");
+    printStack(values);
+    printf("\t\t\t\t\t\t");
+    printStack(ops);
 }
 
 double evaluate(char *expr, double vars[256])
@@ -153,6 +160,8 @@ double evaluate(char *expr, double vars[256])
         {
             // Handle variables
             push(&values, vars[(int)expr[i]]);
+            printf("%c = %i \t\t->\t\t", (int)expr[i], (int)vars[(int)expr[i]]);
+            printStack(&values);
         }
         else if (isdigit(expr[i]))
         {
@@ -165,10 +174,14 @@ double evaluate(char *expr, double vars[256])
             }
             i--;
             push(&values, val);
+            printf("%i \t\t->\t", (int)val);
+            printStack(&values);
         }
         else if (expr[i] == '(')
         {
             push(&ops, expr[i]);
+            printf("%c\t\t->\t\t\t\t", expr[i]);
+            printStack(&ops);
         }
         else if (expr[i] == ')')
         {
@@ -177,6 +190,8 @@ double evaluate(char *expr, double vars[256])
                 calculate(&values, &ops);
             }
             pop(&ops); // Remove '('
+            printf("%c\t\t<-\t\t\t\t", expr[i]);
+            printStack(&ops);
         }
         else
         {
@@ -190,6 +205,8 @@ double evaluate(char *expr, double vars[256])
                 calculate(&values, &ops);
             }
             push(&ops, expr[i]);
+            printf("%c\t\t->\t\t\t\t", expr[i]);
+            printStack(&ops);
         }
     }
 
