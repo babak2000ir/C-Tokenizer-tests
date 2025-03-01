@@ -5,6 +5,7 @@
 #include <math.h>
 
 #define MAX_EXPR_SIZE 100
+int debug = 0;
 
 // Stack for operators and operands
 typedef struct
@@ -103,8 +104,11 @@ double defaultOpValue(char op)
     }
 }
 
-printStack(Stack *s)
+void printStack(Stack *s)
 {
+    if (!debug)
+        return;
+
     printf("[ ");
     for (int i = 0; i <= s->top; i++)
     {
@@ -138,6 +142,9 @@ void calculate(Stack *values, Stack *ops)
         val2 = defaultOpValue(op);
     }
     push(values, applyOp(val2, val1, op));
+
+    if (!debug)
+        return;
     printf("%i %c %i = %li", (int)val2, op, (int)val1, (int)applyOp(val2, val1, op));
     printf("\t\t\t");
     printStack(values);
@@ -160,8 +167,12 @@ double evaluate(char *expr, double vars[256])
         {
             // Handle variables
             push(&values, vars[(int)expr[i]]);
-            printf("%c = %i \t\t->\t\t", (int)expr[i], (int)vars[(int)expr[i]]);
-            printStack(&values);
+
+            if (debug)
+            {
+                printf("%c = %i \t\t->\t\t", (int)expr[i], (int)vars[(int)expr[i]]);
+                printStack(&values);
+            }
         }
         else if (isdigit(expr[i]))
         {
@@ -174,14 +185,22 @@ double evaluate(char *expr, double vars[256])
             }
             i--;
             push(&values, val);
-            printf("%i \t\t->\t", (int)val);
-            printStack(&values);
+
+            if (debug)
+            {
+                printf("%i \t\t->\t", (int)val);
+                printStack(&values);
+            }
         }
         else if (expr[i] == '(')
         {
             push(&ops, expr[i]);
-            printf("%c\t\t->\t\t\t\t", expr[i]);
-            printStack(&ops);
+
+            if (debug)
+            {
+                printf("%c\t\t->\t\t\t\t", expr[i]);
+                printStack(&ops);
+            }
         }
         else if (expr[i] == ')')
         {
@@ -190,8 +209,12 @@ double evaluate(char *expr, double vars[256])
                 calculate(&values, &ops);
             }
             pop(&ops); // Remove '('
-            printf("%c\t\t<-\t\t\t\t", expr[i]);
-            printStack(&ops);
+
+            if (debug)
+            {
+                printf("%c\t\t<-\t\t\t\t", expr[i]);
+                printStack(&ops);
+            }
         }
         else
         {
@@ -205,8 +228,12 @@ double evaluate(char *expr, double vars[256])
                 calculate(&values, &ops);
             }
             push(&ops, expr[i]);
-            printf("%c\t\t->\t\t\t\t", expr[i]);
-            printStack(&ops);
+
+            if (debug)
+            {
+                printf("%c\t\t->\t\t\t\t", expr[i]);
+                printStack(&ops);
+            }
         }
     }
 
@@ -262,8 +289,15 @@ void replace_unary_minus(char *expr)
     expr[j] = '\0'; // Null-terminate string
 }
 
-int main()
+int main(int argc, char *argv[])
 {
+    // debug parameter from command line
+
+    if (argc > 1 && strcmp(argv[1], "debug") == 0)
+    {
+        debug = 1;
+    }
+
     double vars[256] = {0}; // ASCII-based variable storage
 
     vars['x'] = 0;
@@ -273,11 +307,11 @@ int main()
     printf("Variables: x = %lf, y = %lf, z = %lf\n", vars['x'], vars['y'], vars['z']);
 
     char *expr[] = {
-        "-(x + y) * -z", // 2
-        "-(x + y) + -z", //-3
+        "-(x + y) * -z",         // 2
+        "-(x + y) + -z",         //-3
         "-z*(-y --z)-z/z*(y-z)", //-1
-        "-z*(-y --z)", //-2
-        "-z/z*(y-z)" //1
+        "-z*(-y --z)",           //-2
+        "-z/z*(y-z)"             // 1
     };
 
     for (int i = 0; i < sizeof(expr) / sizeof(expr[0]); i++)
