@@ -178,9 +178,18 @@ double evaluate(char *expr, double vars[256])
         {
             // Handle numbers
             double val = 0;
-            while (expr[i] && isdigit(expr[i]))
+            int floatingPoint = 0;
+            while (expr[i] && (isdigit(expr[i]) || expr[i] == '.'))
             {
-                val = (val * 10) + (expr[i] - '0');
+                if (expr[i] == '.')
+                    floatingPoint = 1;
+                else 
+                {
+                    if (floatingPoint)
+                        val = val + ((double)(expr[i] - '0') / pow(10, floatingPoint++));
+                    else
+                        val = (val * 10) + (expr[i] - '0');
+                }
                 i++;
             }
             i--;
