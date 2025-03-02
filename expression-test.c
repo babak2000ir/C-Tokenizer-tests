@@ -7,6 +7,28 @@
 #define MAX_EXPR_SIZE 100
 int debug = 0;
 
+// var signs: $: String, !:float
+
+const char *expOps[] = {
+    //"=",
+    "~", //<>
+    "<",
+    ">",
+    "[", //<=
+    "]", //>=
+    "+",
+    "-",
+    "*",
+    "/",
+    "&", // And
+    "|", // Or
+    "#", // Xor
+    "%", // Mod
+    //",",
+    "^",
+    "_" // Unary minus
+};
+
 // Stack for operators and operands
 typedef struct
 {
@@ -49,16 +71,29 @@ int precedence(char op)
 {
     switch (op)
     {
+    case '|':
+        return 3;
+    case '#':
+        return 3;
+    case '&':
+        return 3;
+    case '>':
+    case '<':
+    case '[':
+    case ']':
+    case '~':
+        return 4;
     case '+':
     case '-':
-        return 1;
+        return 5;
     case '*':
     case '/':
-        return 2;
+    case '%':
+        return 6;
     case '^':
-        return 3;
+        return 7;
     case '_':
-        return 4;
+        return 8;
     default:
         return 0;
     }
@@ -68,6 +103,22 @@ double applyOp(double a, double b, char op)
 {
     switch (op)
     {
+    case '|':
+        return (int)a | (int)b;
+    case '#':
+        return (int)a ^ (int)b;
+    case '&':
+        return (int)a & (int)b;
+    case '>':
+        return a > b;
+    case '<':
+        return a < b;
+    case '[':
+        return a <= b;
+    case ']':
+        return a >= b;
+    case '~':
+        return a != b;
     case '+':
         return a + b;
     case '-':
@@ -77,6 +128,8 @@ double applyOp(double a, double b, char op)
         return a * b;
     case '/':
         return a / b;
+    case '%':
+        return fmod(a, b);
     case '^':
         return pow(a, b);
     default:
@@ -89,14 +142,11 @@ double defaultOpValue(char op)
     switch (op)
     {
     case '+':
-        return 0;
     case '-':
     case '_':
         return 0;
     case '*':
-        return 1;
     case '/':
-        return 1;
     case '^':
         return 1;
     default:
@@ -183,7 +233,7 @@ double evaluate(char *expr, double vars[256])
             {
                 if (expr[i] == '.')
                     floatingPoint = 1;
-                else 
+                else
                 {
                     if (floatingPoint)
                         val = val + ((double)(expr[i] - '0') / pow(10, floatingPoint++));
@@ -277,7 +327,7 @@ int isUnaryMinus(char *expr, int index)
     return 0;
 }
 
-void replace_unary_minus(char *expr)
+void replace_long_ops(char *expr)
 {
     int len = strlen(expr);
     int j = 0;
@@ -316,68 +366,67 @@ int main(int argc, char *argv[])
     printf("Variables: x = %lf, y = %lf, z = %lf\n", vars['x'], vars['y'], vars['z']);
 
     char *expr[] = {
-        //Complex, Precedence and unary
-        "-(x + y) * -z",          // 2
-        "-(x + y) + -z",          //-3
-        "-z*(-y --z)-z/z*(y-z)",  //-1
-        "-z*(-y --z)",            //-2
-        "-z/z*(y-z)",             // 1
-        //Basic
+        // Complex, Precedence and unary
+        "-(x + y) * -z",         // 2
+        "-(x + y) + -z",         //-3
+        "-z*(-y --z)-z/z*(y-z)", //-1
+        "-z*(-y --z)",           //-2
+        "-z/z*(y-z)",            // 1
+        // Basic
         "3 + 5",  // 8
         "10 - 2", // 8
         "7 * 4",  // 28
         "8 / 2",  // 4
-        "2 ^ 3", // 8
-        //Precedence
+        "2 ^ 3",  // 8
+        // Precedence
         "3 + 5 * 2",
         "10 - 2 ^ 3",
         "8 / 2 + 3",
         "(3 + 5) * 2",
         "(10 - 2) ^ 3",
-        //Unary
+        // Unary
         "-5 + 3",
         "-5 * 2",
         "-2 ^ 3",
         "(-2) ^ 3",
         "-(-3)",
-        //Parentheses
+        // Parentheses
         "(3 + (4 * 2)) / 2",
         "((3 + 5) * 2) - (8 / 2)",
         "((2 ^ 3) - 4) * (3 + 1)",
         "(3 + 2) ^ (1 + 1)",
         "(2 ^ (3 + 1)) / (4 - 2)",
-        //Edge Cases
+        // Edge Cases
         "0 / 1",
         "1 / 0",
         "0 * 5 ",
         "0 ^ 0 ",
         "1 ^ 0 ",
         "0 ^ 1 ",
-        "(-1) ^ 0", 
+        "(-1) ^ 0",
         "(-1) ^ 3 ",
         "(-1) ^ 4 ",
-        //Space
+        // Space
         "3+5",
         "3 + 5",
         "(( 3+ 2 )*4 )",
-        //Floating points
+        // Floating points
         "3.5 + 2.1",
         "5.0 / 2",
         "2.5 * 4",
         "(-2.3) ^ 3",
         "(3.5 + 2.5) * 2",
-        //Large Numbers and Overflow
+        // Large Numbers and Overflow
         "999999999 + 1",
-        "2 ^ 30", 
-        "1000000 * 1000000"
-    };
+        "2 ^ 30",
+        "1000000 * 1000000"};
 
     for (int i = 0; i < sizeof(expr) / sizeof(expr[0]); i++)
     {
         // Replace unary - with _
-        replace_unary_minus(expr[i]);
+        replace_long_ops(expr[i]);
 
-        //printf("Expression with uniary minus _ : %s\n", expr[i]);
+        // printf("Expression with uniary minus _ : %s\n", expr[i]);
 
         double result = evaluate(expr[i], vars);
         printf("%s = %lf\n", expr[i], result);
